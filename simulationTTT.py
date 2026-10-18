@@ -76,7 +76,7 @@ shared = get_shared_state()[st.session_state.current_group]
 
 
 # --- STRICT CLOUD-SYNC WRAPPERS ---
-# These functions FORCE the local screen to copy the cloud data every time the page refreshes
+# These functions FORCE the local screen to copy the cloud data every time the page refreshes safely
 def sync_cb(key):
     if st.session_state.get(key, False):
         shared["cb_state"].add(key)
@@ -84,18 +84,16 @@ def sync_cb(key):
         shared["cb_state"].discard(key)
 
 def sync_txt(key):
-    shared["txt_state"][key] = st.session_state[key]
+    # Safety Check: Only save if the key actually exists in memory to avoid KeyError crashes
+    if key in st.session_state:
+        shared["txt_state"][key] = st.session_state[key]
 
 def render_synced_checkbox(label, key):
     cloud_val = (key in shared["cb_state"])
-    if key in st.session_state and st.session_state[key] != cloud_val:
-        st.session_state[key] = cloud_val
     st.checkbox(label, value=cloud_val, key=key, on_change=sync_cb, args=(key,))
 
 def render_synced_text(label, key, placeholder="", label_visibility="visible"):
     cloud_val = shared["txt_state"].get(key, "")
-    if key in st.session_state and st.session_state[key] != cloud_val:
-        st.session_state[key] = cloud_val
     st.text_input(label, value=cloud_val, key=key, placeholder=placeholder, label_visibility=label_visibility, on_change=sync_txt, args=(key,))
 
 

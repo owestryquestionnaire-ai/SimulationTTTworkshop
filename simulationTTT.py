@@ -1,11 +1,5 @@
 import streamlit as st
-
-# Attempt to load the official Streamlit autorefresh plugin
-try:
-    from streamlit_autorefresh import st_autorefresh
-    HAS_AUTOREFRESH = True
-except ImportError:
-    HAS_AUTOREFRESH = False
+import streamlit.components.v1 as components
 
 # 1. Page Config
 st.set_page_config(page_title="Training Guide Builder", layout="wide")
@@ -63,12 +57,29 @@ if st.session_state.current_group is None:
     st.stop()
 
 
-# --- START 5-SECOND AUTO REFRESH ---
-if HAS_AUTOREFRESH:
-    # Forces Streamlit to pull the latest shared group data every 5 seconds
-    st_autorefresh(interval=5000, limit=None, key="data_sync")
-else:
-    st.error("⚠️ Auto-Sync is disabled. Please create a 'requirements.txt' file in your GitHub repo containing exactly: streamlit-autorefresh==1.0.1")
+# --- SMART BACKGROUND AUTO-SYNC (Every 5 seconds) ---
+# This invisible script clicks the "Sync" button every 5 seconds automatically.
+# It pauses if you are currently typing in a text box so it doesn't erase your work.
+components.html(
+    """
+    <script>
+    setInterval(function() {
+        var active = window.parent.document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) {
+            return; 
+        }
+        var buttons = window.parent.document.querySelectorAll("button");
+        buttons.forEach(function(btn) {
+            if (btn.innerText.includes("🔄 Sync")) {
+                btn.click();
+            }
+        });
+    }, 5000);
+    </script>
+    """,
+    height=0,
+    width=0
+)
 
 
 # --- Shared State Fetcher ---
@@ -361,7 +372,7 @@ def add_custom_equipment():
     st.session_state.input_custom_eq = ""
 
 
-# 3. CSS Styling - FORCING 24PX GLOBALLY
+# 3. CSS Styling - FORCING 24PX GLOBALLY & RESTORING COLORS
 st.markdown("""
 <style>
     div[data-testid="stMarkdownContainer"] p, 
@@ -411,6 +422,9 @@ st.markdown("""
         padding-bottom: 8px;
     }
     
+    /* ---------------------------------------------------
+       1. MAIN THEME BUTTONS & COLORS
+       --------------------------------------------------- */
     [data-testid="column"]:has([class*="marker-"]) button, 
     [data-testid="stColumn"]:has([class*="marker-"]) button {
         width: 100% !important; 
@@ -438,26 +452,33 @@ st.markdown("""
         border: 2px solid #666 !important;
     }
 
-    [data-testid="column"]:has(.marker-blue) button { background-color: #d4e4ff !important; }
-    [data-testid="column"]:has(.marker-pink) button { background-color: #ffd4d4 !important; }
-    [data-testid="column"]:has(.marker-purple) button { background-color: #eed4ff !important; }
-    [data-testid="column"]:has(.marker-peach) button { background-color: #ffe4d4 !important; }
-    [data-testid="column"]:has(.marker-green) button { background-color: #d4ffd4 !important; }
-    [data-testid="column"]:has(.marker-cyan) button { background-color: #d4ffff !important; }
-    [data-testid="column"]:has(.marker-lavender) button { background-color: #e6e6fa !important; }
-    [data-testid="column"]:has(.marker-lemon) button { background-color: #fffacd !important; }
-    [data-testid="column"]:has(.marker-rose) button { background-color: #ffe4e1 !important; }
-    [data-testid="column"]:has(.marker-yellow) button { background-color: #fff9d4 !important; }
-    [data-testid="column"]:has(.marker-silver) button { background-color: #f2f2f2 !important; }
-    [data-testid="column"]:has(.marker-mint) button { background-color: #e0f8ee !important; }
-    [data-testid="column"]:has(.marker-coral) button { background-color: #ffdab9 !important; }
+    /* Restored Dual Selectors for Cloud and Local Support */
+    [data-testid="column"]:has(.marker-blue) button, [data-testid="stColumn"]:has(.marker-blue) button { background-color: #d4e4ff !important; }
+    [data-testid="column"]:has(.marker-pink) button, [data-testid="stColumn"]:has(.marker-pink) button { background-color: #ffd4d4 !important; }
+    [data-testid="column"]:has(.marker-purple) button, [data-testid="stColumn"]:has(.marker-purple) button { background-color: #eed4ff !important; }
+    [data-testid="column"]:has(.marker-peach) button, [data-testid="stColumn"]:has(.marker-peach) button { background-color: #ffe4d4 !important; }
+    [data-testid="column"]:has(.marker-green) button, [data-testid="stColumn"]:has(.marker-green) button { background-color: #d4ffd4 !important; }
+    [data-testid="column"]:has(.marker-cyan) button, [data-testid="stColumn"]:has(.marker-cyan) button { background-color: #d4ffff !important; }
+    [data-testid="column"]:has(.marker-lavender) button, [data-testid="stColumn"]:has(.marker-lavender) button { background-color: #e6e6fa !important; }
+    [data-testid="column"]:has(.marker-lemon) button, [data-testid="stColumn"]:has(.marker-lemon) button { background-color: #fffacd !important; }
+    [data-testid="column"]:has(.marker-rose) button, [data-testid="stColumn"]:has(.marker-rose) button { background-color: #ffe4e1 !important; }
+    [data-testid="column"]:has(.marker-yellow) button, [data-testid="stColumn"]:has(.marker-yellow) button { background-color: #fff9d4 !important; }
+    [data-testid="column"]:has(.marker-silver) button, [data-testid="stColumn"]:has(.marker-silver) button { background-color: #f2f2f2 !important; }
+    [data-testid="column"]:has(.marker-mint) button, [data-testid="stColumn"]:has(.marker-mint) button { background-color: #e0f8ee !important; }
+    [data-testid="column"]:has(.marker-coral) button, [data-testid="stColumn"]:has(.marker-coral) button { background-color: #ffdab9 !important; }
 
+    /* ---------------------------------------------------
+       2. EXPANDER HEADERS
+       --------------------------------------------------- */
     div[data-testid="stExpander"] summary p {
         font-size: 28px !important;
         font-weight: 700 !important;
         color: #111 !important;
     }
 
+    /* ---------------------------------------------------
+       3. WIDGET FONTS (Inputs, Labels, Checkboxes)
+       --------------------------------------------------- */
     label[data-testid="stWidgetLabel"] p {
         font-size: 24px !important;
         font-weight: bold !important;
@@ -488,6 +509,9 @@ st.markdown("""
         padding: 12px !important;
     }
 
+    /* ---------------------------------------------------
+       4. "ADD POINT/ITEM" & MINOR BUTTONS
+       --------------------------------------------------- */
     div[data-testid="stExpander"] div[data-testid="column"] div[data-testid="stButton"] button {
         height: 52px !important;
         border-radius: 6px !important;
@@ -500,10 +524,14 @@ st.markdown("""
         color: #333 !important;
     }
     
+    /* Top Right Minor Buttons */
     div[data-testid="stVerticalBlock"] div[data-testid="column"] button p {
         font-size: 18px !important;
     }
 
+    /* ---------------------------------------------------
+       5. GENERATE & NAVIGATION BUTTONS
+       --------------------------------------------------- */
     button[kind="primary"] {
         height: 54px !important;
         width: auto !important; 
@@ -527,6 +555,7 @@ st.markdown("""
         outline: none !important;
     }
 
+    /* Print Document Styling - 24px Baseline */
     .doc-container {
         background-color: white; 
         padding: 40px; 
@@ -550,6 +579,10 @@ with colA:
 with colB:
     st.markdown(f"<div style='text-align:right; font-size:20px; font-weight:bold; color:#2ea44f; margin-bottom: 5px;'>🟢 Active: {st.session_state.current_group}</div>", unsafe_allow_html=True)
     
+    # Using an invisible button for the JS to click so it stays hidden from UI
+    if st.button("🔄 Sync", key="hidden_sync", help="Hidden button for JS auto-sync"):
+        st.rerun()
+
     if st.button("🗑️ Clear Data", use_container_width=True):
         shared["selected_themes"].clear()
         shared["custom_equipments"].clear()
@@ -561,6 +594,15 @@ with colB:
         for k in keys_to_delete:
             del st.session_state[k]
         st.rerun()
+
+st.markdown("""
+<style>
+    /* Hide the auto-sync button so it doesn't clutter the UI */
+    div[data-testid="stButton"] button[title="Hidden button for JS auto-sync"] {
+        display: none !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 

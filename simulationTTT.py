@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
 # 1. Page Config
 st.set_page_config(page_title="Training Guide Builder", layout="wide")
@@ -6,6 +7,7 @@ st.set_page_config(page_title="Training Guide Builder", layout="wide")
 # 2. Shared Multi-User State Manager (Real-time Database Simulation)
 @st.cache_resource
 def get_shared_state():
+    # This dictionary lives on the server and is shared across all users/browsers
     return {
         "Group A": {"selected_themes": set(), "custom_equipments": [], "cb_state": set(), "txt_state": {}, "custom_points": {}},
         "Group B": {"selected_themes": set(), "custom_equipments": [], "cb_state": set(), "txt_state": {}, "custom_points": {}},
@@ -43,7 +45,34 @@ if st.session_state.current_group is None:
             st.session_state.current_group = selected_group
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
-    st.stop()
+    st.stop() # Halt rendering the rest of the app until logged in
+
+
+# --- SMART BACKGROUND AUTO-SYNC ---
+# This Javascript clicks the "Sync" button every 5 seconds, BUT skips it if you are actively typing!
+components.html(
+    """
+    <script>
+    setInterval(function() {
+        var active = window.parent.document.activeElement;
+        // If the user is actively typing in a text box, pause the sync to prevent erasing their input
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) {
+            return; 
+        }
+        
+        // Otherwise, locate the Sync button and click it seamlessly in the background
+        var buttons = window.parent.document.querySelectorAll("button");
+        buttons.forEach(function(btn) {
+            if (btn.innerText.includes("🔄 Sync")) {
+                btn.click();
+            }
+        });
+    }, 5000);
+    </script>
+    """,
+    height=0,
+    width=0
+)
 
 
 # --- Global Data Dictionaries ---

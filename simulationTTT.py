@@ -21,10 +21,13 @@ def get_shared_state():
     }
 
 # 3. Local Session State & URL Parameter Persistence
-# This automatically reads the URL so browser refresh NEVER logs you out
-if "group" in st.query_params:
-    st.session_state.current_group = st.query_params["group"]
-elif "current_group" not in st.session_state:
+try:
+    if "group" in st.query_params:
+        st.session_state.current_group = st.query_params["group"]
+except:
+    pass
+
+if "current_group" not in st.session_state:
     st.session_state.current_group = None
 
 steps = [
@@ -51,8 +54,10 @@ if st.session_state.current_group is None:
         
         if st.button("Join Group Session ➡️", type="primary", use_container_width=True):
             st.session_state.current_group = selected_group
-            # Save the group to the URL instantly
-            st.query_params["group"] = selected_group
+            try:
+                st.query_params["group"] = selected_group
+            except:
+                pass
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
@@ -61,9 +66,37 @@ if st.session_state.current_group is None:
 # --- START 5-SECOND AUTO REFRESH ---
 if HAS_AUTOREFRESH:
     # Forces Streamlit to pull the latest shared group data every 5 seconds
-    st_autorefresh(interval=5000, key="data_sync")
+    st_autorefresh(interval=5000, limit=None, key="data_sync")
 else:
-    st.error("⚠️ Auto-Sync is disabled. Please create a 'requirements.txt' file in your GitHub repo containing: streamlit-autorefresh==1.0.1")
+    st.error("⚠️ Auto-Sync is disabled. Please create a 'requirements.txt' file in your GitHub repo containing exactly: streamlit-autorefresh==1.0.1")
+
+
+# --- Shared State Fetcher ---
+shared = get_shared_state()[st.session_state.current_group]
+
+
+# --- STRICT CLOUD-SYNC WRAPPERS ---
+# These functions FORCE the local screen to copy the cloud data every time the page refreshes
+def sync_cb(key):
+    if st.session_state.get(key, False):
+        shared["cb_state"].add(key)
+    else:
+        shared["cb_state"].discard(key)
+
+def sync_txt(key):
+    shared["txt_state"][key] = st.session_state[key]
+
+def render_synced_checkbox(label, key):
+    cloud_val = (key in shared["cb_state"])
+    if key in st.session_state and st.session_state[key] != cloud_val:
+        st.session_state[key] = cloud_val
+    st.checkbox(label, value=cloud_val, key=key, on_change=sync_cb, args=(key,))
+
+def render_synced_text(label, key, placeholder="", label_visibility="visible"):
+    cloud_val = shared["txt_state"].get(key, "")
+    if key in st.session_state and st.session_state[key] != cloud_val:
+        st.session_state[key] = cloud_val
+    st.text_input(label, value=cloud_val, key=key, placeholder=placeholder, label_visibility=label_visibility, on_change=sync_txt, args=(key,))
 
 
 # --- Global Data Dictionaries ---
@@ -209,18 +242,6 @@ equipment_dict = {
     ]
 }
 
-# --- Shared State Fetcher ---
-shared = get_shared_state()[st.session_state.current_group]
-
-# --- Core Persistance & Logic Helper Functions ---
-def sync_cb(key):
-    if st.session_state.get(key, False):
-        shared["cb_state"].add(key)
-    else:
-        shared["cb_state"].discard(key)
-
-def sync_txt(key):
-    shared["txt_state"][key] = st.session_state[key]
 
 def go_to_step(step_name):
     st.session_state.current_step = step_name
@@ -319,12 +340,12 @@ def render_checklist(options, theme_key):
     
     for i, opt in enumerate(options):
         cb_key = f"chk_{theme_key}_{i}"
-        st.checkbox(opt, value=(cb_key in shared["cb_state"]), key=cb_key, on_change=sync_cb, args=(cb_key,))
+        render_synced_checkbox(opt, cb_key)
             
     c_points = shared["custom_points"].get(theme_key, [])
     for i, custom_opt in enumerate(c_points):
         cb_key = f"custom_chk_{theme_key}_{i}"
-        st.checkbox(custom_opt, value=(cb_key in shared["cb_state"]), key=cb_key, on_change=sync_cb, args=(cb_key,))
+        render_synced_checkbox(custom_opt, cb_key)
             
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2 = st.columns([5, 1])
@@ -345,7 +366,6 @@ def add_custom_equipment():
 # 3. CSS Styling - FORCING 24PX GLOBALLY
 st.markdown("""
 <style>
-    /* Force markdown text globally to 24px */
     div[data-testid="stMarkdownContainer"] p, 
     div[data-testid="stMarkdownContainer"] li {
         font-size: 24px !important;
@@ -360,7 +380,6 @@ st.markdown("""
         font-family: Arial, sans-serif;
     }
     
-    /* CUSTOM TABS MENU */
     div[role="radiogroup"] > label > div:first-child {
         display: none !important;
     }
@@ -383,7 +402,6 @@ st.markdown("""
         padding: 5px 8px; 
     }
     
-    /* Smaller styling for the Step headers */
     .step-header {
         font-size: 32px !important;
         font-weight: 700 !important;
@@ -395,9 +413,6 @@ st.markdown("""
         padding-bottom: 8px;
     }
     
-    /* ---------------------------------------------------
-       1. MAIN THEME BUTTONS
-       --------------------------------------------------- */
     [data-testid="column"]:has([class*="marker-"]) button, 
     [data-testid="stColumn"]:has([class*="marker-"]) button {
         width: 100% !important; 
@@ -425,32 +440,26 @@ st.markdown("""
         border: 2px solid #666 !important;
     }
 
-    [data-testid="column"]:has(.marker-blue) button, [data-testid="stColumn"]:has(.marker-blue) button { background-color: #d4e4ff !important; }
-    [data-testid="column"]:has(.marker-pink) button, [data-testid="stColumn"]:has(.marker-pink) button { background-color: #ffd4d4 !important; }
-    [data-testid="column"]:has(.marker-purple) button, [data-testid="stColumn"]:has(.marker-purple) button { background-color: #eed4ff !important; }
-    [data-testid="column"]:has(.marker-peach) button, [data-testid="stColumn"]:has(.marker-peach) button { background-color: #ffe4d4 !important; }
-    [data-testid="column"]:has(.marker-green) button, [data-testid="stColumn"]:has(.marker-green) button { background-color: #d4ffd4 !important; }
-    [data-testid="column"]:has(.marker-cyan) button, [data-testid="stColumn"]:has(.marker-cyan) button { background-color: #d4ffff !important; }
-    [data-testid="column"]:has(.marker-lavender) button, [data-testid="stColumn"]:has(.marker-lavender) button { background-color: #e6e6fa !important; }
-    [data-testid="column"]:has(.marker-lemon) button, [data-testid="stColumn"]:has(.marker-lemon) button { background-color: #fffacd !important; }
-    [data-testid="column"]:has(.marker-rose) button, [data-testid="stColumn"]:has(.marker-rose) button { background-color: #ffe4e1 !important; }
-    [data-testid="column"]:has(.marker-yellow) button, [data-testid="stColumn"]:has(.marker-yellow) button { background-color: #fff9d4 !important; }
-    [data-testid="column"]:has(.marker-silver) button, [data-testid="stColumn"]:has(.marker-silver) button { background-color: #f2f2f2 !important; }
-    [data-testid="column"]:has(.marker-mint) button, [data-testid="stColumn"]:has(.marker-mint) button { background-color: #e0f8ee !important; }
-    [data-testid="column"]:has(.marker-coral) button, [data-testid="stColumn"]:has(.marker-coral) button { background-color: #ffdab9 !important; }
+    [data-testid="column"]:has(.marker-blue) button { background-color: #d4e4ff !important; }
+    [data-testid="column"]:has(.marker-pink) button { background-color: #ffd4d4 !important; }
+    [data-testid="column"]:has(.marker-purple) button { background-color: #eed4ff !important; }
+    [data-testid="column"]:has(.marker-peach) button { background-color: #ffe4d4 !important; }
+    [data-testid="column"]:has(.marker-green) button { background-color: #d4ffd4 !important; }
+    [data-testid="column"]:has(.marker-cyan) button { background-color: #d4ffff !important; }
+    [data-testid="column"]:has(.marker-lavender) button { background-color: #e6e6fa !important; }
+    [data-testid="column"]:has(.marker-lemon) button { background-color: #fffacd !important; }
+    [data-testid="column"]:has(.marker-rose) button { background-color: #ffe4e1 !important; }
+    [data-testid="column"]:has(.marker-yellow) button { background-color: #fff9d4 !important; }
+    [data-testid="column"]:has(.marker-silver) button { background-color: #f2f2f2 !important; }
+    [data-testid="column"]:has(.marker-mint) button { background-color: #e0f8ee !important; }
+    [data-testid="column"]:has(.marker-coral) button { background-color: #ffdab9 !important; }
 
-    /* ---------------------------------------------------
-       2. EXPANDER HEADERS
-       --------------------------------------------------- */
     div[data-testid="stExpander"] summary p {
         font-size: 28px !important;
         font-weight: 700 !important;
         color: #111 !important;
     }
 
-    /* ---------------------------------------------------
-       3. WIDGET FONTS (Inputs, Labels, Checkboxes)
-       --------------------------------------------------- */
     label[data-testid="stWidgetLabel"] p {
         font-size: 24px !important;
         font-weight: bold !important;
@@ -481,9 +490,6 @@ st.markdown("""
         padding: 12px !important;
     }
 
-    /* ---------------------------------------------------
-       4. "ADD POINT/ITEM" & MINOR BUTTONS
-       --------------------------------------------------- */
     div[data-testid="stExpander"] div[data-testid="column"] div[data-testid="stButton"] button {
         height: 52px !important;
         border-radius: 6px !important;
@@ -496,14 +502,10 @@ st.markdown("""
         color: #333 !important;
     }
     
-    /* Top Right Minor Buttons */
     div[data-testid="stVerticalBlock"] div[data-testid="column"] button p {
         font-size: 18px !important;
     }
 
-    /* ---------------------------------------------------
-       5. GENERATE & NAVIGATION BUTTONS
-       --------------------------------------------------- */
     button[kind="primary"] {
         height: 54px !important;
         width: auto !important; 
@@ -527,7 +529,6 @@ st.markdown("""
         outline: none !important;
     }
 
-    /* Print Document Styling - 24px Baseline */
     .doc-container {
         background-color: white; 
         padding: 40px; 
@@ -545,35 +546,23 @@ st.markdown("""
 
 
 # --- TOP NAVIGATION & HEADER ---
-colA, colB = st.columns([2, 1.5])
+colA, colB = st.columns([2, 1])
 with colA:
     st.markdown('<div class="main-header">Write your own training guide:</div>', unsafe_allow_html=True)
 with colB:
     st.markdown(f"<div style='text-align:right; font-size:20px; font-weight:bold; color:#2ea44f; margin-bottom: 5px;'>🟢 Active: {st.session_state.current_group}</div>", unsafe_allow_html=True)
     
-    btn_col1, btn_col2 = st.columns(2)
-    
-    with btn_col1:
-        if st.button("🔄 Sync", use_container_width=True):
-            # Delete local widget states so Streamlit uses the value from the shared cloud
-            keys_to_delete = [k for k in st.session_state.keys() if k not in ["current_group", "current_step"]]
-            for k in keys_to_delete:
-                del st.session_state[k]
-            st.rerun()
-            
-    with btn_col2:
-        if st.button("🗑️ Clear Data", use_container_width=True):
-            shared["selected_themes"].clear()
-            shared["custom_equipments"].clear()
-            shared["cb_state"].clear()
-            shared["txt_state"].clear()
-            shared["custom_points"].clear()
-            
-            # Aggressively reset ALL local widget values
-            keys_to_delete = [k for k in st.session_state.keys() if k not in ["current_group", "current_step"]]
-            for k in keys_to_delete:
-                del st.session_state[k]
-            st.rerun()
+    if st.button("🗑️ Clear Data", use_container_width=True):
+        shared["selected_themes"].clear()
+        shared["custom_equipments"].clear()
+        shared["cb_state"].clear()
+        shared["txt_state"].clear()
+        shared["custom_points"].clear()
+        
+        keys_to_delete = [k for k in st.session_state.keys() if k not in ["current_group", "current_step"]]
+        for k in keys_to_delete:
+            del st.session_state[k]
+        st.rerun()
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -606,13 +595,10 @@ if st.session_state.current_step == steps[0]:
         target_col = col1 if i % 2 == 0 else col2
         with target_col:
             txt_key = f"t_name_{i}"
-            st.text_input(
+            render_synced_text(
                 f"Trainer {i+1} Name", 
-                value=shared["txt_state"].get(txt_key, ""), 
-                placeholder="Enter trainer name",
                 key=txt_key,
-                on_change=sync_txt,
-                args=(txt_key,)
+                placeholder="Enter trainer name"
             )
 
     st.markdown("<hr>", unsafe_allow_html=True)
@@ -685,13 +671,10 @@ elif st.session_state.current_step == steps[2]:
         with st.expander(f"Theme {theme_number} '{clean_theme_name}'", expanded=True):
             if "Other Theme" in theme:
                 txt_key = f"custom_name_{theme}"
-                st.text_input(
+                render_synced_text(
                     "Theme Name:", 
-                    value=shared["txt_state"].get(txt_key, ""),
-                    placeholder="E.g., Suctioning with Ventilator Case", 
                     key=txt_key,
-                    on_change=sync_txt,
-                    args=(txt_key,)
+                    placeholder="E.g., Suctioning with Ventilator Case"
                 )
                 render_checklist([], clean_theme_name)
             else:
@@ -722,7 +705,7 @@ elif st.session_state.current_step == steps[3]:
             
             for item in equipment_dict[cat]:
                 cb_key = f"eq_{cat}_{item}"
-                st.checkbox(item, value=(cb_key in shared["cb_state"]), key=cb_key, on_change=sync_cb, args=(cb_key,))
+                render_synced_checkbox(item, cb_key)
 
     # --- Add Custom Equipment ---
     st.markdown("<br>", unsafe_allow_html=True)
@@ -736,7 +719,7 @@ elif st.session_state.current_step == steps[3]:
             
         for i, custom_eq in enumerate(shared["custom_equipments"]):
             cb_key = f"custom_eq_chk_{i}"
-            st.checkbox(custom_eq, value=(cb_key in shared["cb_state"]), key=cb_key, on_change=sync_cb, args=(cb_key,))
+            render_synced_checkbox(custom_eq, cb_key)
                 
         st.markdown("<br>", unsafe_allow_html=True)
         col1, col2 = st.columns([5, 1])
@@ -757,12 +740,12 @@ elif st.session_state.current_step == steps[4]:
 
     col1, col2 = st.columns(2)
     with col1:
-        st.text_input("Intro and set the scene:", value=shared["txt_state"].get("role_intro", ""), key="role_intro", on_change=sync_txt, args=("role_intro",))
-        st.text_input("Task 1 facilitator:", value=shared["txt_state"].get("role_task1", ""), key="role_task1", on_change=sync_txt, args=("role_task1",))
-        st.text_input("Task 2 facilitator:", value=shared["txt_state"].get("role_task2", ""), key="role_task2", on_change=sync_txt, args=("role_task2",))
+        render_synced_text("Intro and set the scene:", key="role_intro")
+        render_synced_text("Task 1 facilitator:", key="role_task1")
+        render_synced_text("Task 2 facilitator:", key="role_task2")
     with col2:
-        st.text_input("Debriefer 1:", value=shared["txt_state"].get("role_debrief1", ""), key="role_debrief1", on_change=sync_txt, args=("role_debrief1",))
-        st.text_input("Debriefer 2:", value=shared["txt_state"].get("role_debrief2", ""), key="role_debrief2", on_change=sync_txt, args=("role_debrief2",))
+        render_synced_text("Debriefer 1:", key="role_debrief1")
+        render_synced_text("Debriefer 2:", key="role_debrief2")
 
     st.markdown("<hr>", unsafe_allow_html=True)
     st.button("To Step 6 (Print View) ➡️", type="primary", on_click=go_to_step, args=(steps[5],))

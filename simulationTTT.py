@@ -1,5 +1,11 @@
 import streamlit as st
-import streamlit.components.v1 as components
+
+# Attempt to load the official Streamlit autorefresh plugin
+try:
+    from streamlit_autorefresh import st_autorefresh
+    HAS_AUTOREFRESH = True
+except ImportError:
+    HAS_AUTOREFRESH = False
 
 # 1. Page Config
 st.set_page_config(page_title="Training Guide Builder", layout="wide")
@@ -7,7 +13,6 @@ st.set_page_config(page_title="Training Guide Builder", layout="wide")
 # 2. Shared Multi-User State Manager (Real-time Database Simulation)
 @st.cache_resource
 def get_shared_state():
-    # This dictionary lives on the server and is shared across all users/browsers
     return {
         "Group A": {"selected_themes": set(), "custom_equipments": [], "cb_state": set(), "txt_state": {}, "custom_points": {}},
         "Group B": {"selected_themes": set(), "custom_equipments": [], "cb_state": set(), "txt_state": {}, "custom_points": {}},
@@ -15,8 +20,11 @@ def get_shared_state():
         "Group D": {"selected_themes": set(), "custom_equipments": [], "cb_state": set(), "txt_state": {}, "custom_points": {}},
     }
 
-# 3. Local Session State Initialization
-if "current_group" not in st.session_state:
+# 3. Local Session State & URL Parameter Persistence
+# This automatically reads the URL so browser refresh NEVER logs you out
+if "group" in st.query_params:
+    st.session_state.current_group = st.query_params["group"]
+elif "current_group" not in st.session_state:
     st.session_state.current_group = None
 
 steps = [
@@ -43,37 +51,19 @@ if st.session_state.current_group is None:
         
         if st.button("Join Group Session ➡️", type="primary", use_container_width=True):
             st.session_state.current_group = selected_group
+            # Save the group to the URL instantly
+            st.query_params["group"] = selected_group
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
-    st.stop() # Halt rendering the rest of the app until logged in
+    st.stop()
 
 
-# --- SMART BACKGROUND AUTO-SYNC ---
-# This Javascript clicks the "Sync" button every 5 seconds automatically, 
-# BUT skips the click if you are actively typing so it doesn't erase your text!
-components.html(
-    """
-    <script>
-    setInterval(function() {
-        var active = window.parent.document.activeElement;
-        // If the user is actively typing in a text box, pause the sync
-        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) {
-            return; 
-        }
-        
-        // Otherwise, locate the Sync button and click it silently
-        var buttons = window.parent.document.querySelectorAll("button");
-        buttons.forEach(function(btn) {
-            if (btn.innerText.includes("🔄 Sync")) {
-                btn.click();
-            }
-        });
-    }, 5000);
-    </script>
-    """,
-    height=0,
-    width=0
-)
+# --- START 5-SECOND AUTO REFRESH ---
+if HAS_AUTOREFRESH:
+    # Forces Streamlit to pull the latest shared group data every 5 seconds
+    st_autorefresh(interval=5000, key="data_sync")
+else:
+    st.error("⚠️ Auto-Sync is disabled. Please create a 'requirements.txt' file in your GitHub repo containing: streamlit-autorefresh==1.0.1")
 
 
 # --- Global Data Dictionaries ---
@@ -505,8 +495,8 @@ st.markdown("""
         font-weight: 600 !important;
         color: #333 !important;
     }
-
-    /* Top Right Minor Buttons (Sync/Clear) */
+    
+    /* Top Right Minor Buttons */
     div[data-testid="stVerticalBlock"] div[data-testid="column"] button p {
         font-size: 18px !important;
     }
@@ -565,8 +555,7 @@ with colB:
     
     with btn_col1:
         if st.button("🔄 Sync", use_container_width=True):
-            # To pull the latest data correctly, we delete local widget states 
-            # so Streamlit is forced to use the 'value=...' from the shared cloud state
+            # Delete local widget states so Streamlit uses the value from the shared cloud
             keys_to_delete = [k for k in st.session_state.keys() if k not in ["current_group", "current_step"]]
             for k in keys_to_delete:
                 del st.session_state[k]
@@ -580,7 +569,7 @@ with colB:
             shared["txt_state"].clear()
             shared["custom_points"].clear()
             
-            # Aggressively reset ALL local widget values by deleting them locally
+            # Aggressively reset ALL local widget values
             keys_to_delete = [k for k in st.session_state.keys() if k not in ["current_group", "current_step"]]
             for k in keys_to_delete:
                 del st.session_state[k]

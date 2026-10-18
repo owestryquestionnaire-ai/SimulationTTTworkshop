@@ -3,31 +3,25 @@ import streamlit as st
 # 1. Page Config
 st.set_page_config(page_title="Training Guide Builder", layout="wide")
 
-
 # 2. Shared Multi-User State Manager (Real-time Database Simulation)
 @st.cache_resource
 def get_shared_state():
     return {
-        "Group A": {"selected_themes": set(), "custom_equipments": [], "cb_state": set(), "txt_state": {},
-                    "custom_points": {}},
-        "Group B": {"selected_themes": set(), "custom_equipments": [], "cb_state": set(), "txt_state": {},
-                    "custom_points": {}},
-        "Group C": {"selected_themes": set(), "custom_equipments": [], "cb_state": set(), "txt_state": {},
-                    "custom_points": {}},
-        "Group D": {"selected_themes": set(), "custom_equipments": [], "cb_state": set(), "txt_state": {},
-                    "custom_points": {}},
+        "Group A": {"selected_themes": set(), "custom_equipments": [], "cb_state": set(), "txt_state": {}, "custom_points": {}},
+        "Group B": {"selected_themes": set(), "custom_equipments": [], "cb_state": set(), "txt_state": {}, "custom_points": {}},
+        "Group C": {"selected_themes": set(), "custom_equipments": [], "cb_state": set(), "txt_state": {}, "custom_points": {}},
+        "Group D": {"selected_themes": set(), "custom_equipments": [], "cb_state": set(), "txt_state": {}, "custom_points": {}},
     }
-
 
 # 3. Local Session State Initialization
 if "current_group" not in st.session_state:
     st.session_state.current_group = None
 
 steps = [
-    "Step 1: Background",
-    "Step 2: Themes",
-    "Step 3: Checklists",
-    "Step 4: Equipment",
+    "Step 1: Background", 
+    "Step 2: Themes", 
+    "Step 3: Checklists", 
+    "Step 4: Equipment", 
     "Step 5: Roles",
     "Step 6: Print View"
 ]
@@ -40,13 +34,11 @@ if st.session_state.current_group is None:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("<div style='text-align: center; margin-top: 80px;'>", unsafe_allow_html=True)
-        st.markdown("<h3 style='font-size: 32px;'>Welcome! Please join your assigned group:</h3><br>",
-                    unsafe_allow_html=True)
-
-        selected_group = st.selectbox("Select Group", ["Group A", "Group B", "Group C", "Group D"],
-                                      label_visibility="collapsed")
+        st.markdown("<h3 style='font-size: 32px;'>Welcome! Please join your assigned group:</h3><br>", unsafe_allow_html=True)
+        
+        selected_group = st.selectbox("Select Group", ["Group A", "Group B", "Group C", "Group D"], label_visibility="collapsed")
         st.markdown("<br>", unsafe_allow_html=True)
-
+        
         if st.button("Join Group Session ➡️", type="primary", use_container_width=True):
             st.session_state.current_group = selected_group
             st.rerun()
@@ -82,7 +74,7 @@ def get_theme_options(theme_str):
         return [
             "Did I explain patients are indicated for suctioning when they have signs and symptoms of sputum retention, while other physical modalities have been exhausted?",
             "Did I mention when suctioning should not be performed and when precautions should be taken?",
-            "Did I mention specific infection control consideration to be taken during suctioning?"
+            "Did I mention specific infection control consideration to be taken during suctioning?" 
         ]
     elif "Preparation" in theme_str:
         return [
@@ -157,50 +149,48 @@ def get_theme_options(theme_str):
         ]
     return []
 
-
 equipment_dict = {
     "1. Manikin": [
-        "Laerdal airway management manikin",
-        "Laerdar trach airway management manikin",
-        "Transparent suction model - Sakamotol model",
+        "Laerdal airway management manikin", 
+        "Laerdar trach airway management manikin", 
+        "Transparent suction model - Sakamotol model", 
         "Laerdal paed airway management manikin"
     ],
     "2. Sim monitor": [
-        "iPad with SIMPL app",
-        "Microsoft notebook with sim ventilator",
-        "Bedside monitor with mobile stand",
-        "ECG leads, SpO2 probe",
+        "iPad with SIMPL app", 
+        "Microsoft notebook with sim ventilator", 
+        "Bedside monitor with mobile stand", 
+        "ECG leads, SpO2 probe", 
         "Cough assist machine - Clearway"
     ],
     "3. Suction equipment": [
-        "Suction catheter size 10, 12, 14",
-        "Yaukauer suction tube - two models",
-        "Closed suction catheter",
-        "Screw down needleless syringe (10 or 20 mL)",
-        "10 mL normal saline",
-        "KY jelly - single pack",
+        "Suction catheter size 10, 12, 14", 
+        "Yaukauer suction tube - two models", 
+        "Closed suction catheter", 
+        "Screw down needleless syringe (10 or 20 mL)", 
+        "10 mL normal saline", 
+        "KY jelly - single pack", 
         "20 mL sterile water"
     ],
     "4. Oxygen Delivery Device (ODD)": [
-        "Oxygen device - NRM, simple mask, nasal cannula, HFOT cannula - small and medium size",
+        "Oxygen device - NRM, simple mask, nasal cannula, HFOT cannula - small and medium size", 
         "NIV mask"
     ],
     "5. Airway": [
-        "OP airways - common size",
-        "Trach tubes - subglottic, cuff and cuffless, shiley",
-        "ETT",
-        "Trach tight",
+        "OP airways - common size", 
+        "Trach tubes - subglottic, cuff and cuffless, shiley", 
+        "ETT", 
+        "Trach tight", 
         "Barometer"
     ],
     "6. PPE": [
-        "Gloves: small, medium, large",
+        "Gloves: small, medium, large", 
         "Face shield and PPE"
     ]
 }
 
 # --- Shared State Fetcher ---
 shared = get_shared_state()[st.session_state.current_group]
-
 
 # --- Core Persistance & Logic Helper Functions ---
 def sync_cb(key):
@@ -209,14 +199,11 @@ def sync_cb(key):
     else:
         shared["cb_state"].discard(key)
 
-
 def sync_txt(key):
     shared["txt_state"][key] = st.session_state[key]
 
-
 def go_to_step(step_name):
     st.session_state.current_step = step_name
-
 
 def toggle_theme(theme_name):
     if theme_name in shared["selected_themes"]:
@@ -224,11 +211,10 @@ def toggle_theme(theme_name):
     else:
         shared["selected_themes"].add(theme_name)
 
-
 def get_dynamic_objectives(selected_themes):
     objs = []
     clean_themes = [t.replace('\n', ' ') for t in selected_themes]
-
+    
     if any("Indications" in t for t in clean_themes):
         objs.append("Understand indications and contraindications of suctioning")
     if any("Preparation" in t or "General principles" in t for t in clean_themes):
@@ -241,9 +227,8 @@ def get_dynamic_objectives(selected_themes):
         objs.append("Understand use of suctioning accessories")
     if any("Change of condition" in t for t in clean_themes):
         objs.append("Correctly identify and respond to critical events or error prior to, during and after suctioning")
-
+        
     return objs
-
 
 # --- Button Callback Functions ---
 def select_all_checklist(theme_key, num_options):
@@ -257,7 +242,6 @@ def select_all_checklist(theme_key, num_options):
         shared["cb_state"].add(cb_key)
         st.session_state[cb_key] = True
 
-
 def remove_all_checklist(theme_key, num_options):
     for i in range(num_options):
         cb_key = f"chk_{theme_key}_{i}"
@@ -269,13 +253,11 @@ def remove_all_checklist(theme_key, num_options):
         shared["cb_state"].discard(cb_key)
         st.session_state[cb_key] = False
 
-
 def select_all_equipment(cat, items):
     for item in items:
         cb_key = f"eq_{cat}_{item}"
         shared["cb_state"].add(cb_key)
         st.session_state[cb_key] = True
-
 
 def remove_all_equipment(cat, items):
     for item in items:
@@ -283,13 +265,11 @@ def remove_all_equipment(cat, items):
         shared["cb_state"].discard(cb_key)
         st.session_state[cb_key] = False
 
-
 def select_all_custom_eq():
     for i in range(len(shared["custom_equipments"])):
         cb_key = f"custom_eq_chk_{i}"
         shared["cb_state"].add(cb_key)
         st.session_state[cb_key] = True
-
 
 def remove_all_custom_eq():
     for i in range(len(shared["custom_equipments"])):
@@ -297,47 +277,41 @@ def remove_all_custom_eq():
         shared["cb_state"].discard(cb_key)
         st.session_state[cb_key] = False
 
-
 def add_custom_point(theme_key):
     input_key = f"input_{theme_key}"
     new_point = st.session_state.get(input_key, "").strip()
-
+    
     if theme_key not in shared["custom_points"]:
         shared["custom_points"][theme_key] = []
-
+        
     if new_point and new_point not in shared["custom_points"][theme_key]:
         shared["custom_points"][theme_key].append(new_point)
         idx = len(shared["custom_points"][theme_key]) - 1
         shared["cb_state"].add(f"custom_chk_{theme_key}_{idx}")
     st.session_state[input_key] = ""
 
-
 def render_checklist(options, theme_key):
     btn_col1, btn_col2 = st.columns(2)
     with btn_col1:
-        st.button("✅ Select All", key=f"sel_all_chk_{theme_key}", on_click=select_all_checklist,
-                  args=(theme_key, len(options)))
+        st.button("✅ Select All", key=f"sel_all_chk_{theme_key}", on_click=select_all_checklist, args=(theme_key, len(options)))
     with btn_col2:
-        st.button("❌ Remove All", key=f"rem_all_chk_{theme_key}", on_click=remove_all_checklist,
-                  args=(theme_key, len(options)))
-
+        st.button("❌ Remove All", key=f"rem_all_chk_{theme_key}", on_click=remove_all_checklist, args=(theme_key, len(options)))
+    
     for i, opt in enumerate(options):
         cb_key = f"chk_{theme_key}_{i}"
         st.checkbox(opt, value=(cb_key in shared["cb_state"]), key=cb_key, on_change=sync_cb, args=(cb_key,))
-
+            
     c_points = shared["custom_points"].get(theme_key, [])
     for i, custom_opt in enumerate(c_points):
         cb_key = f"custom_chk_{theme_key}_{i}"
         st.checkbox(custom_opt, value=(cb_key in shared["cb_state"]), key=cb_key, on_change=sync_cb, args=(cb_key,))
-
+            
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2 = st.columns([5, 1])
     with col1:
-        st.text_input("Add new point", key=f"input_{theme_key}", label_visibility="collapsed",
-                      placeholder="Type a custom checklist item here...")
+        st.text_input("Add new point", key=f"input_{theme_key}", label_visibility="collapsed", placeholder="Type a custom checklist item here...")
     with col2:
         st.button("Add Point", key=f"add_btn_{theme_key}", on_click=add_custom_point, args=(theme_key,))
-
 
 def add_custom_equipment():
     new_eq = st.session_state.get("input_custom_eq", "").strip()
@@ -365,7 +339,7 @@ st.markdown("""
         margin-bottom: -5px;
         font-family: Arial, sans-serif;
     }
-
+    
     /* CUSTOM TABS MENU */
     div[role="radiogroup"] > label > div:first-child {
         display: none !important;
@@ -388,7 +362,7 @@ st.markdown("""
         margin: 0;
         padding: 5px 8px; 
     }
-
+    
     /* Smaller styling for the Step headers */
     .step-header {
         font-size: 32px !important;
@@ -400,7 +374,7 @@ st.markdown("""
         border-bottom: 2px solid #eee;
         padding-bottom: 8px;
     }
-
+    
     /* ---------------------------------------------------
        1. MAIN THEME BUTTONS
        --------------------------------------------------- */
@@ -413,7 +387,7 @@ st.markdown("""
         box-shadow: 0px 4px 6px rgba(0,0,0,0.05) !important;
         transition: 0.2s ease-in-out !important;
     }
-
+    
     [data-testid="column"]:has([class*="marker-"]) button p, 
     [data-testid="stColumn"]:has([class*="marker-"]) button p {
         font-size: 32px !important; 
@@ -462,7 +436,7 @@ st.markdown("""
         font-weight: bold !important;
         color: #000 !important;
     }
-
+    
     div[data-testid="stCheckbox"] {
         border-bottom: 1px solid #e0e0e0;
         padding: 12px 8px !important;
@@ -501,7 +475,7 @@ st.markdown("""
         font-weight: 600 !important;
         color: #333 !important;
     }
-
+    
     /* Top Right Minor Buttons (Sync/Clear) */
     div[data-testid="column"]:nth-child(2) button p {
         font-size: 20px !important;
@@ -549,19 +523,24 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
 # --- TOP NAVIGATION & HEADER ---
 colA, colB = st.columns([3, 1])
 with colA:
     st.markdown('<div class="main-header">Write your own training guide:</div>', unsafe_allow_html=True)
 with colB:
-    st.markdown(
-        f"<div style='text-align:right; font-size:20px; font-weight:bold; color:#2ea44f; margin-bottom: 5px;'>🟢 Active: {st.session_state.current_group}</div>",
-        unsafe_allow_html=True)
-
+    st.markdown(f"<div style='text-align:right; font-size:20px; font-weight:bold; color:#2ea44f; margin-bottom: 5px;'>🟢 Active: {st.session_state.current_group}</div>", unsafe_allow_html=True)
+    
     btn_col1, btn_col2 = st.columns(2)
     with btn_col1:
         if st.button("🔄 Sync", use_container_width=True):
+            # To pull the latest data correctly, we delete local widget states 
+            # so Streamlit is forced to use the 'value=...' from the shared cloud state
+            keys_to_delete = [k for k in st.session_state.keys() if k not in ["current_group", "current_step"]]
+            for k in keys_to_delete:
+                del st.session_state[k]
             st.rerun()
+            
     with btn_col2:
         if st.button("🗑️ Clear Data", use_container_width=True):
             shared["selected_themes"].clear()
@@ -569,13 +548,11 @@ with colB:
             shared["cb_state"].clear()
             shared["txt_state"].clear()
             shared["custom_points"].clear()
-
-            for key in list(st.session_state.keys()):
-                if key not in ["current_group", "current_step"]:
-                    if isinstance(st.session_state[key], bool):
-                        st.session_state[key] = False
-                    else:
-                        st.session_state[key] = ""
+            
+            # Aggressively reset ALL local widget values by deleting them locally
+            keys_to_delete = [k for k in st.session_state.keys() if k not in ["current_group", "current_step"]]
+            for k in keys_to_delete:
+                del st.session_state[k]
             st.rerun()
 
 st.markdown("<br>", unsafe_allow_html=True)
@@ -583,8 +560,9 @@ st.markdown("<br>", unsafe_allow_html=True)
 # Render the pseudo-tabs
 st.radio("Navigation", steps, key="current_step", horizontal=True, label_visibility="collapsed")
 
+
 # ==========================================
-# STEP 1: BACKGROUND OF THE TRAINING
+# STEP 1: BACKGROUND OF THE TRAINING 
 # ==========================================
 if st.session_state.current_step == steps[0]:
     st.markdown('<div class="step-header">Step 1: Background of the training</div>', unsafe_allow_html=True)
@@ -602,15 +580,15 @@ if st.session_state.current_step == steps[0]:
     """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
-
+    
     col1, col2 = st.columns(2)
     for i in range(5):
         target_col = col1 if i % 2 == 0 else col2
         with target_col:
             txt_key = f"t_name_{i}"
             st.text_input(
-                f"Trainer {i + 1} Name",
-                value=shared["txt_state"].get(txt_key, ""),
+                f"Trainer {i+1} Name", 
+                value=shared["txt_state"].get(txt_key, ""), 
                 placeholder="Enter trainer name",
                 key=txt_key,
                 on_change=sync_txt,
@@ -621,21 +599,18 @@ if st.session_state.current_step == steps[0]:
     st.button("To Step 2 ➡️", type="primary", on_click=go_to_step, args=(steps[1],))
 
 # ==========================================
-# STEP 2: CHOOSE THE THEMES
+# STEP 2: CHOOSE THE THEMES 
 # ==========================================
 elif st.session_state.current_step == steps[1]:
     st.markdown('<div class="step-header">Step 2: Choose the themes you want to include</div>', unsafe_allow_html=True)
 
-    themes_row1 = ["Indications and\ncontraindications", "Preparation for\nsuctioning",
-                   "General principles\nof suctioning"]
+    themes_row1 = ["Indications and\ncontraindications", "Preparation for\nsuctioning", "General principles\nof suctioning"]
     colors_row1 = ["blue", "pink", "purple"]
 
-    themes_row2 = ["Oropharyngeal suctioning", "Nasopharyngeal/\nNasotracheal suctioning",
-                   "Suctioning on patient\nwith ETT"]
+    themes_row2 = ["Oropharyngeal suctioning", "Nasopharyngeal/\nNasotracheal suctioning", "Suctioning on patient\nwith ETT"]
     colors_row2 = ["peach", "green", "cyan"]
 
-    themes_row3 = ["Suctioning on patient\nwith TT", "Use of suctioning\naccessories",
-                   "Change of condition\nmanagement"]
+    themes_row3 = ["Suctioning on patient\nwith TT", "Use of suctioning\naccessories", "Change of condition\nmanagement"]
     colors_row3 = ["lavender", "lemon", "rose"]
 
     themes_row4 = ["Post-suction\nmanagement", "Other Theme 1", "Other Theme 2"]
@@ -644,7 +619,6 @@ elif st.session_state.current_step == steps[1]:
     themes_row5 = ["Other Theme 3", None, None]
     colors_row5 = ["coral", None, None]
 
-
     def render_row(cols, themes, colors):
         for col, theme, color in zip(cols, themes, colors):
             with col:
@@ -652,7 +626,6 @@ elif st.session_state.current_step == steps[1]:
                     st.markdown(f'<div class="marker-{color}" style="display:none;"></div>', unsafe_allow_html=True)
                     label = f"✅ {theme}" if theme in shared["selected_themes"] else theme
                     st.button(label, key=theme, on_click=toggle_theme, args=(theme,), use_container_width=True)
-
 
     render_row(st.columns(3), themes_row1, colors_row1)
     render_row(st.columns(3), themes_row2, colors_row2)
@@ -664,7 +637,7 @@ elif st.session_state.current_step == steps[1]:
     st.button("To Step 3 ➡️", type="primary", on_click=go_to_step, args=(steps[2],))
 
 # ==========================================
-# STEP 3: DEVELOP CHECKLIST POINTS
+# STEP 3: DEVELOP CHECKLIST POINTS 
 # ==========================================
 elif st.session_state.current_step == steps[2]:
     st.markdown('<div class="step-header">Step 3: Develop checklist points in each theme</div>', unsafe_allow_html=True)
@@ -678,27 +651,24 @@ elif st.session_state.current_step == steps[2]:
     with st.expander("Theme 3 'Familiarization'", expanded=True):
         render_checklist(get_theme_options("Familiarization"), "Mandatory_Familiarization")
 
-    all_ordered_themes = ["Indications and\ncontraindications", "Preparation for\nsuctioning",
-                          "General principles\nof suctioning",
-                          "Oropharyngeal suctioning", "Nasopharyngeal/\nNasotracheal suctioning",
-                          "Suctioning on patient\nwith ETT",
-                          "Suctioning on patient\nwith TT", "Use of suctioning\naccessories",
-                          "Change of condition\nmanagement",
+    all_ordered_themes = ["Indications and\ncontraindications", "Preparation for\nsuctioning", "General principles\nof suctioning",
+                          "Oropharyngeal suctioning", "Nasopharyngeal/\nNasotracheal suctioning", "Suctioning on patient\nwith ETT",
+                          "Suctioning on patient\nwith TT", "Use of suctioning\naccessories", "Change of condition\nmanagement",
                           "Post-suction\nmanagement", "Other Theme 1", "Other Theme 2", "Other Theme 3"]
 
     ordered_selections = [t for t in all_ordered_themes if t in shared["selected_themes"]]
 
     for idx, theme in enumerate(ordered_selections):
         clean_theme_name = theme.replace('\n', ' ')
-        theme_number = idx + 4
-
+        theme_number = idx + 4 
+        
         with st.expander(f"Theme {theme_number} '{clean_theme_name}'", expanded=True):
             if "Other Theme" in theme:
                 txt_key = f"custom_name_{theme}"
                 st.text_input(
-                    "Theme Name:",
+                    "Theme Name:", 
                     value=shared["txt_state"].get(txt_key, ""),
-                    placeholder="E.g., Suctioning with Ventilator Case",
+                    placeholder="E.g., Suctioning with Ventilator Case", 
                     key=txt_key,
                     on_change=sync_txt,
                     args=(txt_key,)
@@ -711,29 +681,25 @@ elif st.session_state.current_step == steps[2]:
     st.button("To Step 4 ➡️", type="primary", on_click=go_to_step, args=(steps[3],))
 
 # ==========================================
-# STEP 4: EQUIPMENTS REQUIRED
+# STEP 4: EQUIPMENTS REQUIRED 
 # ==========================================
 elif st.session_state.current_step == steps[3]:
     st.markdown('<div class="step-header">Step 4: Equipments required</div>', unsafe_allow_html=True)
-    st.markdown(
-        "<div style='font-size: 24px; margin-bottom: 10px;'>Select all the equipment needed for this training scenario:</div>",
-        unsafe_allow_html=True)
-
+    st.markdown("<div style='font-size: 24px; margin-bottom: 10px;'>Select all the equipment needed for this training scenario:</div>", unsafe_allow_html=True)
+    
     eq_cols = st.columns(2)
     categories = list(equipment_dict.keys())
-
+    
     for idx, cat in enumerate(categories):
         with eq_cols[idx % 2]:
             st.markdown(f"<br><div style='font-size: 24px; font-weight: bold;'>{cat}</div>", unsafe_allow_html=True)
-
+            
             btn_col1, btn_col2 = st.columns(2)
             with btn_col1:
-                st.button("✅ Select All", key=f"sel_all_{cat}", on_click=select_all_equipment,
-                          args=(cat, equipment_dict[cat]))
+                st.button("✅ Select All", key=f"sel_all_{cat}", on_click=select_all_equipment, args=(cat, equipment_dict[cat]))
             with btn_col2:
-                st.button("❌ Remove All", key=f"rem_all_{cat}", on_click=remove_all_equipment,
-                          args=(cat, equipment_dict[cat]))
-
+                st.button("❌ Remove All", key=f"rem_all_{cat}", on_click=remove_all_equipment, args=(cat, equipment_dict[cat]))
+            
             for item in equipment_dict[cat]:
                 cb_key = f"eq_{cat}_{item}"
                 st.checkbox(item, value=(cb_key in shared["cb_state"]), key=cb_key, on_change=sync_cb, args=(cb_key,))
@@ -747,16 +713,15 @@ elif st.session_state.current_step == steps[3]:
                 st.button("✅ Select All Custom", key="sel_all_custom_eq", on_click=select_all_custom_eq)
             with btn_col2:
                 st.button("❌ Remove All Custom", key="rem_all_custom_eq", on_click=remove_all_custom_eq)
-
+            
         for i, custom_eq in enumerate(shared["custom_equipments"]):
             cb_key = f"custom_eq_chk_{i}"
             st.checkbox(custom_eq, value=(cb_key in shared["cb_state"]), key=cb_key, on_change=sync_cb, args=(cb_key,))
-
+                
         st.markdown("<br>", unsafe_allow_html=True)
         col1, col2 = st.columns([5, 1])
         with col1:
-            st.text_input("Add custom equipment", key="input_custom_eq", label_visibility="collapsed",
-                          placeholder="Type a custom equipment item here...")
+            st.text_input("Add custom equipment", key="input_custom_eq", label_visibility="collapsed", placeholder="Type a custom equipment item here...")
         with col2:
             st.button("Add Item", key="add_custom_eq_btn", on_click=add_custom_equipment)
 
@@ -764,41 +729,34 @@ elif st.session_state.current_step == steps[3]:
     st.button("To Step 5 ➡️", type="primary", on_click=go_to_step, args=(steps[4],))
 
 # ==========================================
-# STEP 5: DIVISION OF LABOUR
+# STEP 5: DIVISION OF LABOUR 
 # ==========================================
 elif st.session_state.current_step == steps[4]:
     st.markdown('<div class="step-header">Step 5: Division of Labour</div>', unsafe_allow_html=True)
-    st.markdown("<div style='font-size: 24px; margin-bottom: 10px;'>Assign trainers to the following roles:</div>",
-                unsafe_allow_html=True)
+    st.markdown("<div style='font-size: 24px; margin-bottom: 10px;'>Assign trainers to the following roles:</div>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
-        st.text_input("Intro and set the scene:", value=shared["txt_state"].get("role_intro", ""), key="role_intro",
-                      on_change=sync_txt, args=("role_intro",))
-        st.text_input("Task 1 facilitator:", value=shared["txt_state"].get("role_task1", ""), key="role_task1",
-                      on_change=sync_txt, args=("role_task1",))
-        st.text_input("Task 2 facilitator:", value=shared["txt_state"].get("role_task2", ""), key="role_task2",
-                      on_change=sync_txt, args=("role_task2",))
+        st.text_input("Intro and set the scene:", value=shared["txt_state"].get("role_intro", ""), key="role_intro", on_change=sync_txt, args=("role_intro",))
+        st.text_input("Task 1 facilitator:", value=shared["txt_state"].get("role_task1", ""), key="role_task1", on_change=sync_txt, args=("role_task1",))
+        st.text_input("Task 2 facilitator:", value=shared["txt_state"].get("role_task2", ""), key="role_task2", on_change=sync_txt, args=("role_task2",))
     with col2:
-        st.text_input("Debriefer 1:", value=shared["txt_state"].get("role_debrief1", ""), key="role_debrief1",
-                      on_change=sync_txt, args=("role_debrief1",))
-        st.text_input("Debriefer 2:", value=shared["txt_state"].get("role_debrief2", ""), key="role_debrief2",
-                      on_change=sync_txt, args=("role_debrief2",))
+        st.text_input("Debriefer 1:", value=shared["txt_state"].get("role_debrief1", ""), key="role_debrief1", on_change=sync_txt, args=("role_debrief1",))
+        st.text_input("Debriefer 2:", value=shared["txt_state"].get("role_debrief2", ""), key="role_debrief2", on_change=sync_txt, args=("role_debrief2",))
 
     st.markdown("<hr>", unsafe_allow_html=True)
     st.button("To Step 6 (Print View) ➡️", type="primary", on_click=go_to_step, args=(steps[5],))
 
 # ==========================================
-# STEP 6: PRINT VIEW
+# STEP 6: PRINT VIEW 
 # ==========================================
 elif st.session_state.current_step == steps[5]:
     st.markdown('<div class="step-header">Step 6: Print View</div>', unsafe_allow_html=True)
-
+    
     # 1. Gather Background Data
-    trainer_names_list = [shared["txt_state"].get(f"t_name_{i}", "") for i in range(5) if
-                          shared["txt_state"].get(f"t_name_{i}", "").strip()]
+    trainer_names_list = [shared["txt_state"].get(f"t_name_{i}", "") for i in range(5) if shared["txt_state"].get(f"t_name_{i}", "").strip()]
     dynamic_objs = get_dynamic_objectives(shared["selected_themes"])
-
+    
     # 2. Re-Build Selected Equipments
     final_equipments = {}
     for cat, items in equipment_dict.items():
@@ -806,18 +764,16 @@ elif st.session_state.current_step == steps[5]:
         sel_items = [item for item in items if f"eq_{cat}_{item}" in shared["cb_state"]]
         if sel_items:
             final_equipments[cat_label] = sel_items
-
-    custom_eq_sel = [eq for i, eq in enumerate(shared["custom_equipments"]) if
-                     f"custom_eq_chk_{i}" in shared["cb_state"]]
+            
+    custom_eq_sel = [eq for i, eq in enumerate(shared["custom_equipments"]) if f"custom_eq_chk_{i}" in shared["cb_state"]]
     if custom_eq_sel:
         final_equipments["Custom Equipment"] = custom_eq_sel
 
     # 3. Re-Build Theme Checklists
     final_checklists = {}
-
+    
     # Mandatory Themes
-    for title, key in [("Introduction", "Mandatory_Intro"), ("Scene set up", "Mandatory_Scene"),
-                       ("Familiarization", "Mandatory_Familiarization")]:
+    for title, key in [("Introduction", "Mandatory_Intro"), ("Scene set up", "Mandatory_Scene"), ("Familiarization", "Mandatory_Familiarization")]:
         pts = []
         for i, opt in enumerate(get_theme_options(title)):
             if f"chk_{key}_{i}" in shared["cb_state"]: pts.append(opt)
@@ -826,24 +782,21 @@ elif st.session_state.current_step == steps[5]:
         if pts: final_checklists[title] = pts
 
     # Optional Themes
-    all_ordered_themes = ["Indications and\ncontraindications", "Preparation for\nsuctioning",
-                          "General principles\nof suctioning",
-                          "Oropharyngeal suctioning", "Nasopharyngeal/\nNasotracheal suctioning",
-                          "Suctioning on patient\nwith ETT",
-                          "Suctioning on patient\nwith TT", "Use of suctioning\naccessories",
-                          "Change of condition\nmanagement",
+    all_ordered_themes = ["Indications and\ncontraindications", "Preparation for\nsuctioning", "General principles\nof suctioning",
+                          "Oropharyngeal suctioning", "Nasopharyngeal/\nNasotracheal suctioning", "Suctioning on patient\nwith ETT",
+                          "Suctioning on patient\nwith TT", "Use of suctioning\naccessories", "Change of condition\nmanagement",
                           "Post-suction\nmanagement", "Other Theme 1", "Other Theme 2", "Other Theme 3"]
     ordered_selections = [t for t in all_ordered_themes if t in shared["selected_themes"]]
 
     for theme in ordered_selections:
         clean_theme_name = theme.replace('\n', ' ')
         key = clean_theme_name
-
+        
         final_name = clean_theme_name
         if "Other Theme" in theme:
             custom_name = shared["txt_state"].get(f"custom_name_{theme}", "").strip()
             if custom_name: final_name = custom_name
-
+            
         pts = []
         for i, opt in enumerate(get_theme_options(clean_theme_name)):
             if f"chk_{key}_{i}" in shared["cb_state"]: pts.append(opt)
@@ -852,7 +805,6 @@ elif st.session_state.current_step == steps[5]:
         if pts: final_checklists[final_name] = pts
 
     # Display Visual Print View
-    # Constructing HTML dynamically into a single continuous string to prevent Markdown code block wrapping
     html_out = """
     <div class='doc-container'>
         <div style='text-align: center; margin-bottom: 20px;'>
@@ -861,18 +813,18 @@ elif st.session_state.current_step == steps[5]:
         </div>
         <p style='margin-top: 10px; margin-bottom: 10px;'><strong style='color: #000;'>Goal:</strong> Correct and safe physiotherapy practice to perform sputum suctioning on Adult inpatients</p>
     """
-
+    
     if dynamic_objs:
         objs_list_html = "".join([f"<li>{o}</li>" for o in dynamic_objs])
         html_out += f"<div style='margin-bottom: 10px;'><strong style='color: #000;'>Objectives:</strong><br>After completion of this training, participant is able to:<ul style='margin-top: 5px; margin-bottom: 10px;'>{objs_list_html}</ul></div>"
-
+    
     html_out += f"""
         <p style='margin-top: 10px; margin-bottom: 0;'><strong style='color: #000;'>Date:</strong> 23/10/2026</p>
         <p style='margin-top: 0; margin-bottom: 0;'><strong style='color: #000;'>Duration:</strong> 20 minutes</p>
         <p style='margin-top: 0; margin-bottom: 0;'><strong style='color: #000;'>Target participant:</strong> New recruit RPT or staff with interest</p>
         <p style='margin-top: 0; margin-bottom: 0;'><strong style='color: #000;'>Participants per class:</strong> 5</p>
         <p style='margin-top: 0; margin-bottom: 10px;'><strong style='color: #000;'>Trainer:</strong> {', '.join(trainer_names_list) if trainer_names_list else 'Unassigned'}</p>
-
+        
         <strong style='color: #000;'>Division of Labour:</strong>
         <ul style='margin-top: 0; margin-bottom: 10px;'>
             <li>Intro and set the scene: {shared['txt_state'].get('role_intro', 'Unassigned')}</li>
@@ -881,7 +833,7 @@ elif st.session_state.current_step == steps[5]:
             <li>Debriefer 1: {shared['txt_state'].get('role_debrief1', 'Unassigned')}</li>
             <li>Debriefer 2: {shared['txt_state'].get('role_debrief2', 'Unassigned')}</li>
         </ul>
-
+        
         <strong style='color: #000;'>Equipments:</strong><br>
     """
 
@@ -890,9 +842,9 @@ elif st.session_state.current_step == steps[5]:
             html_out += f"<strong style='color: #000;'>{cat}:</strong> {', '.join(items)}<br>"
     else:
         html_out += "<em>No equipment selected.</em><br>"
-
+        
     html_out += "<div style='font-size: 28px; font-weight: bold; border-bottom: 2px solid #000; padding-bottom: 5px; margin-top: 20px; margin-bottom: 15px; color: #000;'>Checklist for Trainer</div>"
-
+    
     if final_checklists:
         for theme_title, points in final_checklists.items():
             html_out += f"<strong style='color: #000;'>{theme_title}</strong>"
@@ -900,7 +852,7 @@ elif st.session_state.current_step == steps[5]:
             html_out += f"<ul style='list-style-type: none; padding-left: 0; margin-top: 0px; margin-bottom: 20px;'>{pts_html}</ul>"
     else:
         html_out += "<em>No checklist points selected.</em>"
-
+        
     html_out += "</div>"
 
     html_out = html_out.replace("\n", "")
